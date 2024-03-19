@@ -13,6 +13,10 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+
 
 class DatasetSplit():
 
@@ -74,9 +78,61 @@ class DatasetSplit():
             image_path = os.path.join(class_dir, f"{label}_{len(os.listdir(class_dir))}.png")
             cv2.imwrite(image_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
+
+
+
+
+class AugmentDataSplit(DatasetSplit):
+
+    def __init__(self,data_dir):
+        self.IMAGE_DIR = data_dir
+        self.classnames = os.listdir(os.path.join(self.IMAGE_DIR, "images"))
+        self.classnames = self.remove_file_artifacts(self.classnames)
+
+    def datasplit_extracted(self):
+        X = []
+        y = []
+
+        for i, classname in enumerate(self.classnames):
+            ims = os.listdir(os.path.join(self.IMAGE_DIR, "images", classname))
+            ims = self.remove_file_artifacts(ims)
+            for j, im in enumerate(ims):
+                img_path = os.path.join(self.IMAGE_DIR, "images", classname, im)
+                img = Image.open(img_path)
+                img_resized = img.resize((200, 200))  # Resize the image
+                img_array = np.array(img_resized)  
+                X.append(img_array)
+                y.append(classname)
+
+        X_train, X_test, y_train, y_test = train_test_split(X,y,random_state=23)
+        return X_train,y_train, X_test, y_test
+    
+
+
+
+
+
+
 IMAGE_DIR = "../../extracted_data/"
 ds = DatasetSplit(IMAGE_DIR)
 ds.save_test()
+
+classnames_train = os.listdir(IMAGE_DIR+"training/")
+print(len(classnames_train))
+
+classnames_test = os.listdir(IMAGE_DIR+"testing/")
+print(len(classnames_test))
+
+
+
+
+
+
+
+IMAGE_DIR = "../../augmented_data/"
+ds = AugmentDataSplit(IMAGE_DIR)
+ds.save_test()
+
 classnames_train = os.listdir(IMAGE_DIR+"training/")
 print(len(classnames_train))
 
